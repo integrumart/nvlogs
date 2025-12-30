@@ -3,47 +3,55 @@ import shutil
 import datetime
 import globalVars
 import addonHandler
+import globalPluginHandler
 
-# Eklenti çeviri desteği (gerekli durumlar için)
+# 1. Uluslararası Dil Desteğini Başlat (Joseph'in 3. maddesi için)
 addonHandler.initTranslation()
+_ = addonHandler.getTranslation()
 
 def save_nvda_log():
     """NVDA log dosyasını Belgelerim altına kopyalar."""
     try:
-        # 1. Hedef klasörü oluştur (Belgelerim/nvlogs_logs_nvda)
+        # Hedef klasör (Belgelerim/nvlogs_logs_nvda)
         documents_path = os.path.join(os.path.expanduser("~"), "Documents")
         target_dir = os.path.join(documents_path, "nvlogs_logs_nvda")
         
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
         
-        # 2. NVDA'nın o an kullandığı aktif log dosyasını tespit et
-        # globalVars üzerinden mevcut log dosyasının yolunu alıyoruz
+        # NVDA'nın o an kullandığı aktif log dosyasını tespit et
         log_file_source = getattr(globalVars.appArgs, "logFileName", None)
         
-        # Eğer yukarıdaki yöntem boş dönerse (nadiren), geçici klasöre bak
         if not log_file_source or not os.path.exists(log_file_source):
             temp_log = os.path.join(os.environ.get('TEMP', ''), 'nvda.log')
             if os.path.exists(temp_log):
                 log_file_source = temp_log
 
-        # 3. Eğer log dosyası bulunduysa kopyalama işlemini yap
         if log_file_source and os.path.exists(log_file_source):
-            # Dosya adını tarih ve saatle oluştur (Sıralama için Yıl-Ay-Gün)
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             target_file_name = f"nvda_log_{timestamp}.log"
             target_path = os.path.join(target_dir, target_file_name)
-            
-            # shutil.copy2 kullanarak meta verileriyle (zaman damgası vb.) kopyala
             shutil.copy2(log_file_source, target_path)
             
     except Exception:
-        # Kullanıcıyı rahatsız etmemek için hataları arka planda yutuyoruz
         pass
 
-# NVDA eklentiyi yüklediğinde (veya her yeniden başladığında) fonksiyonu çalıştır
-save_nvda_log()
-
-class AddonStore(addonHandler.Addon):
+# 2. Joseph'in 2. Maddesi: Boş sınıf hatasını "pass" ile çözüyoruz
+class GlobalPlugin(globalPluginHandler.GlobalPlugin):
+    """
+    Bu sınıf NVDA eklenti standartları gereği eklenmiştir.
+    Joseph'in önerisiyle içi 'pass' ile doldurularak log hataları engellenmiştir.
+    """
+    
     def __init__(self):
         super().__init__()
+        # Eklenti başladığında otomatik log kaydı al
+        save_nvda_log()
+
+    # 3. Joseph'in 1. Maddesi: Kısayolu kullanıcıya bırakıyoruz.
+    # Kullanıcı Girdi Sözlükleri altından bu scripti bulup tuş atayabilir.
+    def script_saveLogManually(self, gesture):
+        save_nvda_log()
+    
+    # Scriptin menüde nasıl görüneceğini tanımlıyoruz (İngilizce ana metin)
+    script_saveLogManually.__doc__ = _("Saves the current NVDA log to the Documents folder.")

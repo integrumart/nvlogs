@@ -1,0 +1,5 @@
+# nvLogs eklentisi için Türkçe çeviri dosyası
+# Volkan Özdemir tarafından hazırlandı
+
+msgid "Saves the current NVDA log to the Documents folder."
+msgstr "Mevcut NVDA günlüğünü Belgelerim klasörüne kaydeder."
