@@ -1,6 +1,0 @@
-# NVDA Log Recorder translation file
-msgid "NVDA Log Recorder"
-msgstr "NVDA Log Kaydedici"
-
-msgid "Automatically backs up system logs to the Documents/nvlogs_logs_nvda folder every time NVDA opens or restarts."
-msgstr "NVDA her açıldığında ve yeniden başladığında sistem loglarını otomatik olarak Belgelerim/nvlogs_logs_nvda klasörüne yedekler."

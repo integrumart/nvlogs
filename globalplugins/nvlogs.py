@@ -1,57 +1,38 @@
-import os
-import shutil
-import datetime
-import globalVars
-import addonHandler
+# -*- coding: utf-8 -*-
 import globalPluginHandler
+import scriptHandler
+import addonHandler
+import ui
+import wx
+import gui
+import logHandler
 
-# 1. Uluslararası Dil Desteğini Başlat (Joseph'in 3. maddesi için)
 addonHandler.initTranslation()
-_ = addonHandler.getTranslation()
 
-def save_nvda_log():
-    """NVDA log dosyasını Belgelerim altına kopyalar."""
-    try:
-        # Hedef klasör (Belgelerim/nvlogs_logs_nvda)
-        documents_path = os.path.join(os.path.expanduser("~"), "Documents")
-        target_dir = os.path.join(documents_path, "nvlogs_logs_nvda")
-        
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-        
-        # NVDA'nın o an kullandığı aktif log dosyasını tespit et
-        log_file_source = getattr(globalVars.appArgs, "logFileName", None)
-        
-        if not log_file_source or not os.path.exists(log_file_source):
-            temp_log = os.path.join(os.environ.get('TEMP', ''), 'nvda.log')
-            if os.path.exists(temp_log):
-                log_file_source = temp_log
-
-        if log_file_source and os.path.exists(log_file_source):
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            target_file_name = f"nvda_log_{timestamp}.log"
-            target_path = os.path.join(target_dir, target_file_name)
-            shutil.copy2(log_file_source, target_path)
-            
-    except Exception:
-        pass
-
-# 2. Joseph'in 2. Maddesi: Boş sınıf hatasını "pass" ile çözüyoruz
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
-    """
-    Bu sınıf NVDA eklenti standartları gereği eklenmiştir.
-    Joseph'in önerisiyle içi 'pass' ile doldurularak log hataları engellenmiştir.
-    """
-    
-    def __init__(self):
-        super().__init__()
-        # Eklenti başladığında otomatik log kaydı al
-        save_nvda_log()
+	def __init__(self):
+		super().__init__()
 
-    # 3. Joseph'in 1. Maddesi: Kısayolu kullanıcıya bırakıyoruz.
-    # Kullanıcı Girdi Sözlükleri altından bu scripti bulup tuş atayabilir.
-    def script_saveLogManually(self, gesture):
-        save_nvda_log()
-    
-    # Scriptin menüde nasıl görüneceğini tanımlıyoruz (İngilizce ana metin)
-    script_saveLogManually.__doc__ = _("Saves the current NVDA log to the Documents folder.")
+	@scriptHandler.script(description=_("Show NVDA Log"), category=_("NVLogs"))
+	def script_showLogs(self, gesture):
+		wx.CallAfter(self.displayLog)
+
+	def displayLog(self):
+		log_content = logHandler.log.getLog()
+		if not log_content:
+			ui.message(_("Log is empty."))
+			return
+		dlg = wx.Dialog(gui.mainFrame, title=_("NVDA Log Viewer v5.0 - Volkan Ozdemir Software Services"), size=(600, 450), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+		panel = wx.Panel(dlg)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		text_ctrl = wx.TextCtrl(panel, value=log_content, style=wx.TE_MULTILINE | wx.TE_READONLY)
+		sizer.Add(text_ctrl, 1, wx.EXPAND | wx.ALL, 10)
+		btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+		close_btn = wx.Button(panel, wx.ID_CANCEL, label=_("Close"))
+		close_btn.Bind(wx.EVT_BUTTON, lambda e: dlg.Destroy())
+		btn_sizer.Add(close_btn, 0, wx.ALL, 5)
+		sizer.Add(btn_sizer, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+		panel.SetSizer(sizer)
+		dlg.CenterOnScreen()
+		dlg.ShowModal()
+		dlg.Destroy()
